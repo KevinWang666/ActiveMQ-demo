@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<context:component-scan base-package="com.zuikc.acitveMQ_Spring" />
+
+	<!-- 引入ActiveMQConnection用于连接ActiveMQ服务器 -->
+	<bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="tcp://192.168.5.130:61616" />
+	</bean>
+
+	<!-- 让Spring来管理与ActiveMQ的连接 -->
+	<bean id="singleConnectionFactory"
+		class="org.springframework.jms.connection.SingleConnectionFactory">
+		<property name="targetConnectionFactory" ref="connectionFactory" />
+	</bean>
+
+	<!-- 引入JmsTemplate,用于发送消息，该类封装了发送消息的模板代码 -->
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="singleConnectionFactory" />
+		<property name="defaultDestination" ref="queueDestination" />
+	</bean>
+
+	<!-- 配置Destination -->
+	<!-- Queue端点 -->
+	<bean id="queueDestination" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg>
+			<value>spring-topic</value>
+		</constructor-arg>
+	</bean>
+	<!-- Topic端点 -->
+	<bean id="topicDestination" class="org.apache.activemq.command.ActiveMQTopic">
+		<constructor-arg value="spring-topic" />
+	</bean>
+
+	<!-- 初始化消息监听器容器，并引入自来定义的消息监听器 -->
+	<bean
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="singleConnectionFactory" />
+		<property name="destination" ref="queueDestination" />
+		<property name="messageListener" ref="myFirstMessageListener" />
+	</bean>
+
+</beans>
